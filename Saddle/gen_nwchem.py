@@ -20,7 +20,7 @@ def read_xyz(fname):
         sline = file.readline().strip()
         
         # Read the atom data
-        for _ in range(num_atoms):
+        for _ in range(fline):
             line = file.readline().strip().split()
             element = line[0]  # Element symbol (e.g., 'O', 'H')
             x, y, z = map(float, line[1:])  # Coordinates in 3D space
@@ -31,7 +31,7 @@ def read_xyz(fname):
     return atoms, np.array(coords)
 
 # generate nwchem script
-def nwchem_gen(ifiles, ofile):
+def nwchem_gen(ifile, ofile):
 
     geometry_tags = [" ", "endgeom"]
 
@@ -42,18 +42,15 @@ def nwchem_gen(ifiles, ofile):
         file.write(f'# XYZ coordinates in Angstrom units\n')
         
         # Write XYZ blocks with specific geometry tags
-        for idx, (input_file, tag) in enumerate(zip(ifiles, geometry_tags), start=1):
-            # Read data from each input file
-            atoms, coords = read_xyz(ifile)
+        atoms, coords = read_xyz(ifile)
 
-            # Write geometry block with the specific tag
-            file.write(f'geometry {tag} nocenter noautosym noautoz \n')
-            file.write(f'# Input File {idx}: {ifile}\n')
+        # Write geometry block with the specific tag
+        file.write(f'geometry nocenter noautosym noautoz \n')
             
-            # Write the atom and coordinate data
-            for atom, coord in zip(atoms, coords):
-                file.write(f'  {atom:<2}  {coord[0]:.6f}  {coord[1]:.6f}  {coord[2]:.6f}\n')
-            file.write('end\n\n')  # Close the geometry block
+        # Write the atom and coordinate data
+        for atom, coord in zip(atoms, coords):
+            file.write(f'  {atom:<2}  {coord[0]:.6f}  {coord[1]:.6f}  {coord[2]:.6f}\n')
+        file.write('end\n\n')  # Close the geometry block
 
         file.write('# Specify the basis set\nbasis\n  * library def2-svp\nend\n\n')
         file.write('# Set up DFT options\ndft\n  xc b3lyp\n  mult 2\n  convergence energy 1e-6\nend\n\n')    # change the mult for spin multiplicity
@@ -62,8 +59,8 @@ def nwchem_gen(ifiles, ofile):
 def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description='Input XYZ file for nwchem script')
-    parser.add_argument('-i', '--input', dest='input_file', nargs=1, type=str, required=True, help='Path to the XYZ file.')
-    parser.add_argument('-o', '--output', dest='output_file',type=str, required=True, help='output filename without extension.')
+    parser.add_argument('-i', '--input', dest='ifile', type=str, required=True, help='Path to the XYZ file.')
+    parser.add_argument('-o', '--output', dest='ofile',type=str, required=True, help='output filename without extension.')
     
     # Parse command-line arguments
     args = parser.parse_args()
